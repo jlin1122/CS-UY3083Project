@@ -1,1 +1,45 @@
+1a)
+SELECT photoID
+FROM photo JOIN follow ON (username_followed = photoPoster)
+WHERE followstatus = TRUE AND username_follower = "TestUser"
+UNION
+SELECT p.photoID
+FROM photo as p 
+JOIN sharedwith as s ON (p.photoID = s.photoID)
+JOIN belongto as b ON (b.groupName = s.groupName AND b.owner_username = s.groupOwner)
+WHERE b.member_username = "TestUser"
 
+1b)
+Displaying Images (PhotoID/photoPoster for now):
+def images():
+    query = 'SELECT photoID, photoPoster ' \
+            'FROM photo ' \
+            'JOIN follow ON (username_followed = photoPoster) ' \
+            'WHERE followstatus = TRUE AND allFollowers = TRUE AND username_follower = "' \
+            + session["username"] + \
+            '" UNION ' \
+            'SELECT p.photoID, p.photoPoster ' \
+            'FROM photo as p ' \
+            'JOIN sharedwith as s ON (p.photoID = s.photoID) '\
+            'JOIN belongto as b ON (b.groupName = s.groupName AND b.owner_username = s.groupOwner) ' \
+            'WHERE b.member_username = "' \
+            + session["username"] +"\""
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+    data = cursor.fetchall()
+    return render_template("images.html", images=data)
+    
+    <html>
+    <head>
+        <title>Finstagram</title>
+    </head>
+    <body>
+        <h1>Image Gallery</h1>
+        <div>
+            {% for image in images %}
+		             {{image}}
+            {% endfor %}
+        </div>
+        <a href="/">Go back</a>
+    </body>
+</html>
