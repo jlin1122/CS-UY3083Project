@@ -1,0 +1,6 @@
+optional features to add:
+Search by tag - Andy Tu
+Search by poster - Andy Tu
+Likes - Brian Chan - update the likes table when "like" is clicked on an image
+Unfollow - Brian Chan - leave the tags visible to other followers even if the tagged person doesn't follow anymore.
+Manage Follows - Jason Lin 
