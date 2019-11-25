@@ -50,12 +50,15 @@ def upload():
 @login_required
 def images():
     query = 'SELECT photoID, photoPoster ' \
-            'FROM photo JOIN follow ON (username_followed = photoPoster) ' \
+            'FROM photo ' \
+            'JOIN follow ON (username_followed = photoPoster) ' \
             'WHERE followstatus = TRUE AND allFollowers = TRUE AND username_follower = "' \
             + session["username"] + \
             '" UNION ' \
             'SELECT p.photoID, p.photoPoster ' \
-            'FROM photo as p JOIN sharedwith as s ON (p.photoID = s.photoID) JOIN belongto as b ON (b.groupName = s.groupName AND b.owner_username = s.groupOwner) ' \
+            'FROM photo as p ' \
+            'JOIN sharedwith as s ON (p.photoID = s.photoID) '\
+            'JOIN belongto as b ON (b.groupName = s.groupName AND b.owner_username = s.groupOwner) ' \
             'WHERE b.member_username = "' \
             + session["username"] +"\""
     with connection.cursor() as cursor:
