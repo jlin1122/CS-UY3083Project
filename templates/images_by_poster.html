@@ -1,0 +1,23 @@
+<html>
+    <head>
+        <title>Finstagram</title>
+    </head>
+    <body>
+        <h1>Images Posted By {{poster}}</h1>
+		<div>
+            <form action="/imageSearch" method="post">
+                <input type="text" name="poster" placeholder="Enter Poster by Username" required/>
+                <br/>
+                <input type="submit" value="Search By Poster">
+            </form>
+        </div>
+        <div>
+            {% for image in images %}
+
+            <!--<img src="/images/{{image.filepath}}" width="300"/>-->
+			{{image}}
+            {% endfor %}
+        </div>
+        <a href="/">Go back</a>
+    </body>
+</html>
