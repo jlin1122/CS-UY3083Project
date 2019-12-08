@@ -49,18 +49,19 @@ def upload():
 @app.route("/images", methods=["GET"])
 @login_required
 def images():
-    query = 'SELECT photoID, photoPoster ' \
+    query = 'SELECT photoID ' \
             'FROM photo ' \
             'JOIN follow ON (username_followed = photoPoster) ' \
             'WHERE followstatus = TRUE AND allFollowers = TRUE AND username_follower = "' \
-            + session["username"] + \
-            '" UNION ' \
-            'SELECT p.photoID, p.photoPoster ' \
+            + session["username"] \
+            + '" UNION ' \
+            'SELECT p.photoID ' \
             'FROM photo as p ' \
-            'JOIN sharedwith as s ON (p.photoID = s.photoID) '\
+            'JOIN sharedwith as s ON (p.photoID = s.photoID) ' \
             'JOIN belongto as b ON (b.groupName = s.groupName AND b.owner_username = s.groupOwner) ' \
             'WHERE b.member_username = "' \
-            + session["username"] +"\""
+            + session["username"] +"\"" + \
+            " ORDER BY photoID DESC"
     with connection.cursor() as cursor:
         cursor.execute(query)
     data = cursor.fetchall()
@@ -156,6 +157,32 @@ def upload_image():
         message = "Failed to upload image."
         return render_template("upload.html", message=message)
 
+@app.route("/imageSearch", methods=["GET", "POST"])
+def imageSearch():
+    if request.form:
+        requestData = request.form
+        poster = requestData["poster"]
+        query = 'SELECT photoID ' \
+                'FROM photo ' \
+                'JOIN follow ON (username_followed = photoPoster) ' \
+                'WHERE followstatus = TRUE AND allFollowers = TRUE AND username_follower = "' \
+                + session["username"] + "\"" \
+                + " AND photoPoster = \"" \
+                + poster + "\"" \
+                + ' UNION ' \
+                'SELECT p.photoID ' \
+                'FROM photo as p ' \
+                'JOIN sharedwith as s ON (p.photoID = s.photoID) ' \
+                'JOIN belongto as b ON (b.groupName = s.groupName AND b.owner_username = s.groupOwner) ' \
+                'WHERE b.member_username = "' \
+                + session["username"] + "\"" \
+                + " AND p.photoPoster = \"" \
+                + poster + "\""\
+                + " ORDER BY photoID DESC"
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+        data = cursor.fetchall()
+        return render_template("images_by_poster.html", poster=poster, images=data)
 if __name__ == "__main__":
     if not os.path.isdir("images"):
         os.mkdir(IMAGES_DIR)
