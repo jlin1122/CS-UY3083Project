@@ -10,7 +10,6 @@ app = Flask(__name__)
 app.secret_key = "super secret key"
 IMAGES_DIR = os.path.join(os.getcwd(), "images")
 SALT = "cs3083"
-query3_1a = "SELECT photoID, photoPoster FROM photo WHERE"
 
 
 connection = pymysql.connect(host="localhost",
@@ -46,28 +45,54 @@ def home():
 def upload():
     return render_template("upload.html")
 
+@app.route("/follow", methods=["GET"])
+@login_required
+def follow():
+    return render_template("follow.html")
+
+@app.route("/request", methods=["GET"])
+@login_required
+def list_request():
+    curr_user = session["username"]
+    query = "SELECT * FROM follow WHERE username_followed = %s AND followstatus = 0"
+    with connection.cursor() as cursor:
+        cursor.execute(query, (curr_user))
+    data = cursor.fetchall()
+    #print(data)
+    #return render_template('followers.html', username=username, flist=data, requests=newreqs, mefollow=mefollow)
+    return render_template("request.html", requests = data)
+
+@app.route("/accept", methods = ["GET","POST"])
+@login_required
+def accept():
+    curr_user = session["username"]
+    follower = request.form["follower"]
+    query = "UPDATE follow SET followstatus = 1 WHERE username_followed = %s AND username_follower = %s"
+    with connection.cursor() as cursor:
+        cursor.execute(query, (curr_user, follower))
+    return redirect(url_for("list_request"))
+
+
+@app.route("/reject", methods = ["GET","POST"])
+@login_required
+def reject():
+    curr_user = session["username"]
+    follower = request.form["follower"]
+    query = "DELETE FROM follow WHERE username_followed = %s AND username_follower = %s AND followstatus = 0"
+    with connection.cursor() as cursor:
+        cursor.execute(query, (curr_user, follower))
+    return redirect(url_for("list_request"))
+
 @app.route("/images", methods=["GET"])
 @login_required
 def images():
-    query = 'SELECT photoID ' \
-            'FROM photo ' \
-            'JOIN follow ON (username_followed = photoPoster) ' \
-            'WHERE followstatus = TRUE AND allFollowers = TRUE AND username_follower = "' \
-            + session["username"] \
-            + '" UNION ' \
-            'SELECT p.photoID ' \
-            'FROM photo as p ' \
-            'JOIN sharedwith as s ON (p.photoID = s.photoID) ' \
-            'JOIN belongto as b ON (b.groupName = s.groupName AND b.owner_username = s.groupOwner) ' \
-            'WHERE b.member_username = "' \
-            + session["username"] +"\"" + \
-            " ORDER BY photoID DESC"
+    query = "SELECT * FROM photo"
     with connection.cursor() as cursor:
         cursor.execute(query)
     data = cursor.fetchall()
     return render_template("images.html", images=data)
 
-@app.route("/image/<image_name>", methods=["GET"])
+@app.route("/images/<image_name>", methods=["GET"])
 def image(image_name):
     image_location = os.path.join(IMAGES_DIR, image_name)
     if os.path.isfile(image_location):
@@ -136,7 +161,7 @@ def logout():
 @app.route("/uploadImage", methods=["GET", "POST"])
 @login_required
 def upload_image():
-    if request.files:
+    if request.form:
         image_file = request.files.get("imageToUpload", "")
         image_name = image_file.filename
         filepath = os.path.join(IMAGES_DIR, image_name)
@@ -148,41 +173,45 @@ def upload_image():
 
         
         query = "INSERT INTO photo (postingdate, filepath, allFollowers, caption, photoPoster) VALUES (%s, %s, %s, %s, %s)"
-        print(posting_time, filepath, allfollowers, caption)
+        #print(posting_time, filepath, allfollowers, caption)
+        #q2 = INSERT INTO sharedWith
         with connection.cursor() as cursor:
             cursor.execute(query, (posting_time, filepath, allfollowers, caption, username))
         message = "Image has been successfully uploaded."
+        
         return render_template("upload.html", message=message)
     else:
         message = "Failed to upload image."
         return render_template("upload.html", message=message)
 
-@app.route("/imageSearch", methods=["GET", "POST"])
-def imageSearch():
-    if request.form:
-        requestData = request.form
-        poster = requestData["poster"]
-        query = 'SELECT photoID ' \
-                'FROM photo ' \
-                'JOIN follow ON (username_followed = photoPoster) ' \
-                'WHERE followstatus = TRUE AND allFollowers = TRUE AND username_follower = "' \
-                + session["username"] + "\"" \
-                + " AND photoPoster = \"" \
-                + poster + "\"" \
-                + ' UNION ' \
-                'SELECT p.photoID ' \
-                'FROM photo as p ' \
-                'JOIN sharedwith as s ON (p.photoID = s.photoID) ' \
-                'JOIN belongto as b ON (b.groupName = s.groupName AND b.owner_username = s.groupOwner) ' \
-                'WHERE b.member_username = "' \
-                + session["username"] + "\"" \
-                + " AND p.photoPoster = \"" \
-                + poster + "\""\
-                + " ORDER BY photoID DESC"
+@app.route("/followUser", methods=["GET", "POST"])
+@login_required
+def follow_user():
+    userToFollow = request.form["username"]
+    curr_user = session["username"]
+    #print(userToFollow)
+    #print(curr_user)
+    #check if there is already a follow request
+    query = "SELECT COUNT(*) FROM follow WHERE username_followed = %s AND username_follower = %s"
+    with connection.cursor() as cursor:
+        cursor.execute(query, (userToFollow, curr_user))
+    data = cursor.fetchone()
+    #print(data)
+    
+    if data['COUNT(*)'] > 0:
+        message = "You already sent a follow request or you already follow this user."
+        return render_template("follow.html", message=message)
+    else:
+        q2 = "INSERT INTO follow (username_followed, username_follower, followStatus) VALUES (%s, %s, 0)"
         with connection.cursor() as cursor:
-            cursor.execute(query)
-        data = cursor.fetchall()
-        return render_template("images_by_poster.html", poster=poster, images=data)
+            cursor.execute(q2, (userToFollow, curr_user))
+        message = "Follow request sent to " + str(userToFollow)
+        return render_template("follow.html", message=message)
+
+    #error = "An unknown error has occurred. Please try again."
+    #return render_template("follow.html", error=error)
+
+
 if __name__ == "__main__":
     if not os.path.isdir("images"):
         os.mkdir(IMAGES_DIR)
