@@ -3,12 +3,21 @@
         <title>Finstagram</title>
     </head>
     <body>
-        <h1>Image Gallery</h1>
+        <h1>Image Gallery </h1>
+		<div>
+            <form action="/imageSearch" method="post">
+                <input type="text" name="poster" placeholder="Enter Poster by Username" required/>
+                <br/>
+                <input type="submit" value="Search By Poster">
+            </form>
+        </div>
         <div>
             {% for image in images %}
 
-            <!--<img src="/images/{{image}}" width="300"/>-->
+            <img src="/images/{{image.filepath}}" width="300"/>
+			<br>
 			{{image}}
+			<br>
             {% endfor %}
         </div>
         <a href="/">Go back</a>
