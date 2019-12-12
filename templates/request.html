@@ -3,11 +3,14 @@
         <title>Manage incoming requests</title>
     </head>
     <body>
-        {%if requests == () %}
+        {%if requests == () and requests_tag == () %}
         <h2>You currently have no incoming requests</h2>
         <a href="/">Go back</a>
         {% else %}
-        <h2>Manage incoming requests</h2>
+        <h2>Manage incoming follower requests</h2>
+        {%if requests == () %}
+        <h4>You have no incoming follower requests</h4>
+        {% else %}
         <div>
             <table>
                 <th>Username</th>
@@ -22,6 +25,26 @@
                 {% endfor %}
             </table>
         </div>
+        {% endif %}
+        <h2>Manage incoming tag requests</h2>
+        {%if requests_tag == () %}
+        <h4>You have no incoming tag requests</h4>
+        {% else %}
+        <div>
+            <table>
+                <th>photoID</th>
+                <th></th>
+                <th></th>
+                {% for row in requests_tag %}
+                    <tr>
+                        <td>{{row.photoID}}</td>
+                        <td><form action="/accept_tag" method="post"><input type="submit" value="Accept"><input type="hidden" name="phototag" value={{row.photoID}}></form></td>
+                        <td><form action="/reject_tag" method="post"><input type="submit" value="Reject"><input type="hidden" name="phototag" value={{row.photoID}}></form></td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endif %}
         <a href="/">Go back</a>
         {% endif %}
     </body>

@@ -3,11 +3,34 @@
         <title>Finstagram</title>
     </head>
     <body>
-        <h1>Image Gallery</h1>
+        <h1>Image Gallery </h1>
+		<div>
+            <form action="/imageSearch" method="post">
+                <input type="text" name="poster" placeholder="Enter Poster by Username" required/>
+                <br/>
+                <input type="submit" value="Search By Poster">
+            </form>
+        </div>
         <div>
+            {% if message %}
+            {{ message }}
+            {% endif %}
+            <br/>
+            {% if error %}
+            {{ error }}
+            {% endif %}
+            <br/>
             {% for image in images %}
 
-            <img src="/{{image.filepath}}" width="300"/>
+            <img src="/images/{{image.filepath}}" width="300"/>
+			<br>
+            {{image.photoID}} 
+            <br>
+            <form action="/tagUser" method="post" enctype="multipart/form-data">
+                Username to tag: <input type="text" name="username" placeholder="Enter a username" required>
+                <br/>
+                <input type="submit" value="Tag"><input type="hidden" name="photo_id" value={{image.photoID}}> 
+            </form>
             {% endfor %}
         </div>
         <a href="/">Go back</a>
